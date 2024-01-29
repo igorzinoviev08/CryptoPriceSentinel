@@ -1,7 +1,7 @@
 import psycopg2
 from datetime import datetime
 
-from config import DB_HOST, DB_NAME, DB_USER, DB_PASS
+from .config import DB_HOST, DB_NAME, DB_USER, DB_PASS
 
 # Database configuration
 db_config = {

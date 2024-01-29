@@ -1,5 +1,5 @@
 import requests
-from database_manager import insert_prices_to_db
+from .database_manager import insert_prices_to_db
 
 
 def get_latest_prices():

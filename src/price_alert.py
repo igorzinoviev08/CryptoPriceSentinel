@@ -1,5 +1,5 @@
 import pandas as pd
-from database_manager import connect_to_db
+from .database_manager import connect_to_db
 from datetime import datetime, timedelta
 
 
