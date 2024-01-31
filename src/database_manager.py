@@ -1,15 +1,11 @@
-import psycopg2
 from datetime import datetime
 
-from config import DB_HOST, DB_NAME, DB_USER, DB_PASS
+import psycopg2
+
+from config import DB_HOST, DB_NAME, DB_PASS, DB_USER
 
 # Database configuration
-db_config = {
-    'host': DB_HOST,
-    'database': DB_NAME,
-    'user': DB_USER,
-    'password': DB_PASS
-}
+db_config = {"host": DB_HOST, "database": DB_NAME, "user": DB_USER, "password": DB_PASS}
 
 
 def connect_to_db():

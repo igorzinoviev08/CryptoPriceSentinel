@@ -1,4 +1,5 @@
 import requests
+
 from database_manager import insert_prices_to_db
 
 
@@ -16,8 +17,8 @@ def get_latest_prices():
         eth_response = requests.get(eth_url)
         btc_response = requests.get(btc_url)
 
-        eth_price = float(eth_response.json()['price'])
-        btc_price = float(btc_response.json()['price'])
+        eth_price = float(eth_response.json()["price"])
+        btc_price = float(btc_response.json()["price"])
 
         return eth_price, btc_price
     except Exception as e:

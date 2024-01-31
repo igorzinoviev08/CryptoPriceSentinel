@@ -16,6 +16,8 @@ CryptoPriceSentinel - это инструмент для мониторинга 
 - База данных: PostgreSQL
 - Внешние библиотеки: requests для HTTP-запросов, psycopg2 для работы с PostgreSQL
 - API биржи криптовалют
+- Flake8 для линтинга
+- Black и Isort для форматирования кода
 
 ## Инструкция по установке
 
