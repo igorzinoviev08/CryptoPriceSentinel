@@ -1,6 +1,22 @@
 import pandas as pd
 from sklearn.linear_model import LinearRegression
-from database_manager import get_historical_data
+
+from database_manager import Session as session_factory
+from models import PriceData
+
+
+def _get_historical_data():
+    """
+    Получает исторические данные о ценах из базы данных с использованием ORM.
+
+    Возвращает:
+        Список объектов PriceData.
+    """
+    session = session_factory()
+    try:
+        return session.query(PriceData).order_by(PriceData.timestamp).all()
+    finally:
+        session.close()
 
 
 def perform_regression_analysis():
@@ -16,19 +32,24 @@ def perform_regression_analysis():
     Возвращает:
         Обученную модель линейной регрессии.
     """
-    data = get_historical_data()
-    df = pd.DataFrame(data, columns=['timestamp', 'eth_price', 'btc_price'])
+    data = _get_historical_data()
+    # Создание DataFrame из данных ORM
+    df = pd.DataFrame(
+        [(d.timestamp, d.eth_price, d.btc_price) for d in data],
+        columns=["timestamp", "eth_price", "btc_price"],
+    )
 
-    df['eth_return'] = df['eth_price'].pct_change()
-    df['btc_return'] = df['btc_price'].pct_change()
+    df["eth_return"] = df["eth_price"].pct_change()
+    df["btc_return"] = df["btc_price"].pct_change()
     df.dropna(inplace=True)
 
-    X = df[['btc_return']]
-    y = df['eth_return']
+    X = df[["btc_return"]]
+    y = df["eth_return"]
     model = LinearRegression().fit(X, y)
 
     # Вывод результатов
-    print(f"""
+    print(
+        f"""
     Результаты регрессионного анализа:
     Коэффициент (Coefficients): {model.coef_[0]:.4f}
     Это значение показывает, на сколько процентов изменяется цена ETH (eth_return),
@@ -40,6 +61,6 @@ def perform_regression_analysis():
     Перехват (или точка пересечения с осью Y) показывает предсказанное значение изменения цены ETH (eth_return),
     когда изменение цены BTC (btc_return) равно нулю. В реальности это значение имеет ограниченную интерпретацию,
     поскольку цены на криптовалюту редко остаются статичными.
-    """)
-
-    return model  # Возвращаем модель
+    """
+    )
+    return model

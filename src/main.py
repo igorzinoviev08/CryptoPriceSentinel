@@ -1,7 +1,8 @@
+import time
+
+from data_analysis import perform_regression_analysis
 from data_collector import collect_data
 from price_alert import check_price_movement
-from data_analysis import perform_regression_analysis
-import time
 
 
 def main():
