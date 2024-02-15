@@ -2,7 +2,26 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 
-from database_manager import connect_to_db
+from database_manager import Session as session_factory
+from models import PriceData
+
+
+def _get_price_data_last_hour():
+    """
+    Получает записи о ценах ETH и BTC за последний час.
+    """
+    session = session_factory()
+    one_hour_ago = datetime.now() - timedelta(hours=1)
+    try:
+        data = (
+            session.query(PriceData)
+            .filter(PriceData.timestamp >= one_hour_ago)
+            .order_by(PriceData.timestamp.asc())
+            .all()
+        )
+        return data
+    finally:
+        session.close()
 
 
 def check_price_movement(regression_model):
@@ -19,39 +38,27 @@ def check_price_movement(regression_model):
     Выводит сообщение, если обнаруживается изменение цены ETH более чем на 1%,
     которое не соответствует ожидаемому изменению на основе цены BTC.
     """
-    conn = connect_to_db()
-    if conn:
-        try:
-            cursor = conn.cursor()
-            query = """
-            SELECT eth_price, btc_price FROM price_data
-            WHERE timestamp >= %s
-            ORDER BY timestamp ASC
-            """
-            one_hour_ago = datetime.now() - timedelta(hours=1)
-            cursor.execute(query, (one_hour_ago,))
-            records = cursor.fetchall()
+    data = _get_price_data_last_hour()
+    if data:
+        # Преобразование данных в DataFrame
+        df = pd.DataFrame(
+            [(d.timestamp, d.eth_price, d.btc_price) for d in data],
+            columns=["timestamp", "eth_price", "btc_price"],
+        )
 
-            if records:
-                # Преобразование Decimal в float
-                start_eth_price = float(records[0][0])
-                start_btc_price = float(records[0][1])
-                end_eth_price = float(records[-1][0])
-                end_btc_price = float(records[-1][1])
+        start_eth_price = df.iloc[0]["eth_price"]
+        start_btc_price = df.iloc[0]["btc_price"]
+        end_eth_price = df.iloc[-1]["eth_price"]
+        end_btc_price = df.iloc[-1]["btc_price"]
 
-                eth_change = (end_eth_price - start_eth_price) / start_eth_price
-                btc_change = (end_btc_price - start_btc_price) / start_btc_price
+        eth_change = (end_eth_price - start_eth_price) / start_eth_price
+        btc_change = (end_btc_price - start_btc_price) / start_btc_price
 
-                # Создаем DataFrame для предсказания
-                df_for_prediction = pd.DataFrame({"btc_return": [btc_change]})
-                predicted_eth_change = regression_model.predict(df_for_prediction)[0]
+        # Создаем DataFrame для предсказания
+        df_for_prediction = pd.DataFrame({"btc_return": [btc_change]})
+        predicted_eth_change = regression_model.predict(df_for_prediction)[0]
 
-                # Проверяем, отличается ли фактическое изменение ETH от предсказанного
-                if abs(eth_change - predicted_eth_change) >= 0.01:
-                    print(
-                        f"Значительное независимое изменение в цене ETH обнаружено: {end_eth_price}"
-                    )
-        except Exception as e:
-            print(f"Ошибка при проверке изменения цен: {e}")
-        finally:
-            conn.close()
+        if abs(eth_change - predicted_eth_change) >= 0.01:
+            print(
+                f"Значительное независимое изменение в цене ETH обнаружено: {end_eth_price}"
+            )

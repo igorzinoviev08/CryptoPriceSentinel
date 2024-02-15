@@ -1,7 +1,22 @@
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-from database_manager import get_historical_data
+from database_manager import Session as session_factory
+from models import PriceData
+
+
+def _get_historical_data():
+    """
+    Получает исторические данные о ценах из базы данных с использованием ORM.
+
+    Возвращает:
+        Список объектов PriceData.
+    """
+    session = session_factory()
+    try:
+        return session.query(PriceData).order_by(PriceData.timestamp).all()
+    finally:
+        session.close()
 
 
 def perform_regression_analysis():
@@ -17,8 +32,12 @@ def perform_regression_analysis():
     Возвращает:
         Обученную модель линейной регрессии.
     """
-    data = get_historical_data()
-    df = pd.DataFrame(data, columns=["timestamp", "eth_price", "btc_price"])
+    data = _get_historical_data()
+    # Создание DataFrame из данных ORM
+    df = pd.DataFrame(
+        [(d.timestamp, d.eth_price, d.btc_price) for d in data],
+        columns=["timestamp", "eth_price", "btc_price"],
+    )
 
     df["eth_return"] = df["eth_price"].pct_change()
     df["btc_return"] = df["btc_price"].pct_change()
@@ -44,5 +63,4 @@ def perform_regression_analysis():
     поскольку цены на криптовалюту редко остаются статичными.
     """
     )
-
-    return model  # Возвращаем модель
+    return model
